@@ -1,25 +1,79 @@
-import logo from './logo.svg';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+import Header from './components/Header';
+import VoiceInput from './components/VoiceInput';
+import Cart from './components/Cart';
+import { Toaster } from 'react-hot-toast';
+import axios from 'axios';
 
 function App() {
+  const [cart, setCart] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  // Fetch cart from backend
+  const fetchCart = async () => {
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/cart');
+      setCart(res.data.cart);
+      setTotal(res.data.total);
+    } catch (error) {
+      console.log('Backend not connected');
+    }
+  };
+
+  // Fetch cart on first load
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // When voice assistant gets a response, refresh cart
+  const handleResponse = (data) => {
+    if (data.cart) {
+      setCart(data.cart);
+      setTotal(data.total || 0);
+    }
+    fetchCart();
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Toaster position="top-right" />
+      <Header />
+      <main style={styles.main}>
+        <div style={styles.grid}>
+          <div style={styles.left}>
+            <VoiceInput onResponse={handleResponse} />
+          </div>
+          <div style={styles.right}>
+            <Cart
+              cart={cart}
+              total={total}
+              onCartUpdate={fetchCart}
+            />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
+
+const styles = {
+  main: {
+    padding: '30px',
+    maxWidth: '1100px',
+    margin: '0 auto',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '20px',
+  },
+  left: {
+    flex: 1,
+  },
+  right: {
+    flex: 1,
+  },
+};
 
 export default App;
