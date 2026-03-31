@@ -3,12 +3,17 @@ import './App.css';
 import Header from './components/Header';
 import VoiceInput from './components/VoiceInput';
 import Cart from './components/Cart';
+import RestaurantList from './components/RestaurantList';
+import OrderConfirm from './components/OrderConfirm';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
 function App() {
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
+  const [options, setOptions] = useState([]);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [finalTotal, setFinalTotal] = useState(0);
 
   // Fetch cart from backend
   const fetchCart = async () => {
@@ -26,13 +31,30 @@ function App() {
     fetchCart();
   }, []);
 
-  // When voice assistant gets a response, refresh cart
+  // When voice assistant gets a response
   const handleResponse = (data) => {
     if (data.cart) {
       setCart(data.cart);
       setTotal(data.total || 0);
     }
+    if (data.options) {
+      setOptions(data.options);
+    }
+    if (data.order_placed) {
+    setFinalTotal(total);
+    setOrderPlaced(true);
+    setOptions([]);
+    }
     fetchCart();
+  };
+
+  // Start a new order
+  const handleNewOrder = () => {
+    setOrderPlaced(false);
+    setOptions([]);
+    setCart([]);
+    setTotal(0);
+    setFinalTotal(0);
   };
 
   return (
@@ -40,18 +62,40 @@ function App() {
       <Toaster position="top-right" />
       <Header />
       <main style={styles.main}>
-        <div style={styles.grid}>
-          <div style={styles.left}>
-            <VoiceInput onResponse={handleResponse} />
+
+        {/* Order Confirmed Screen */}
+        {orderPlaced ? (
+          <OrderConfirm
+            total={finalTotal}
+            onNewOrder={handleNewOrder}
+          />
+        ) : (
+
+          /* Main App Grid */
+          <div style={styles.grid}>
+
+            {/* Left Side */}
+            <div style={styles.left}>
+              <VoiceInput onResponse={handleResponse} />
+              {options.length > 0 && (
+                <RestaurantList
+                  options={options}
+                  onCartUpdate={fetchCart}
+                />
+              )}
+            </div>
+
+            {/* Right Side */}
+            <div style={styles.right}>
+              <Cart
+                cart={cart}
+                total={total}
+                onCartUpdate={fetchCart}
+              />
+            </div>
+
           </div>
-          <div style={styles.right}>
-            <Cart
-              cart={cart}
-              total={total}
-              onCartUpdate={fetchCart}
-            />
-          </div>
-        </div>
+        )}
       </main>
     </div>
   );
