@@ -7,17 +7,19 @@ import toast from 'react-hot-toast';
 function RestaurantList({ options, onCartUpdate }) {
 
   // --------- ADD ITEM TO CART ---------
-  const addToCart = async (option) => {
-    try {
-      await axios.post('http://127.0.0.1:8000/order/process', {
-        message: `I want ${option.item}`,
-      });
-      toast.success(`${option.item} added to cart!`);
-      if (onCartUpdate) onCartUpdate();
-    } catch (error) {
-      toast.error('Could not add item. Is backend running?');
-    }
-  };
+const addToCart = async (option) => {
+  try {
+    await axios.post('http://127.0.0.1:8000/cart/add', {
+      item: option.item,
+      restaurant: option.restaurant,
+      price: option.price,
+    });
+    toast.success(`${option.item} added to cart!`);
+    if (onCartUpdate) onCartUpdate();
+  } catch (error) {
+    toast.error('Could not add item. Is backend running?');
+  }
+};
 
   // --------- NO OPTIONS ---------
   if (!options || options.length === 0) {
