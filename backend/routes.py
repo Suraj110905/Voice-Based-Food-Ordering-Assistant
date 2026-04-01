@@ -133,3 +133,28 @@ def clear_cart():
     """Clear the cart"""
     cart.clear()
     return {"response": "Cart cleared successfully!"}
+class AddItemRequest(BaseModel):
+    item: str
+    restaurant: str
+    price: int
+
+@router.post("/cart/add")
+def add_specific_item(request: AddItemRequest):
+    """Add a specific item directly to cart"""
+    existing = next(
+        (i for i in cart if i["item"] == request.item), None
+    )
+    if existing:
+        existing["quantity"] += 1
+    else:
+        cart.append({
+            "item": request.item,
+            "restaurant": request.restaurant,
+            "price": request.price,
+            "quantity": 1
+        })
+    return {
+        "response": f"✅ {request.item} from {request.restaurant} added to cart!",
+        "cart": cart,
+        "total": calculate_total()
+    }
