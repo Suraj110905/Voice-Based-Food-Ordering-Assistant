@@ -50,6 +50,27 @@ def get_restaurants():
 def process_order(user_input: UserMessage):
     """Main endpoint - processes user voice message"""
     message = user_input.message.lower()
+    # Check if user wants to add a specific item by name
+    for restaurant in restaurants:
+        for menu_item in restaurant["menu"]:
+            if menu_item["item"].lower() in message:
+                existing = next(
+                    (i for i in cart if i["item"] == menu_item["item"]), None
+                )
+                if existing:
+                    existing["quantity"] += 1
+                else:
+                    cart.append({
+                        "item": menu_item["item"],
+                        "restaurant": restaurant["name"],
+                        "price": menu_item["price"],
+                        "quantity": 1
+                    })
+                return {
+                    "response": f"✅ Added {menu_item['item']} from {restaurant['name']} to your cart! Want anything else?",
+                    "cart": cart,
+                    "total": calculate_total()
+                }
 
     # Check if user wants to see cart
     if "cart" in message or "bill" in message or "total" in message:
