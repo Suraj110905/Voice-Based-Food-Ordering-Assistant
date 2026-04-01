@@ -3,11 +3,17 @@ from pydantic import BaseModel
 from data import restaurants, food_keywords
 from database import orders_collection, favorites_collection, history_collection
 from datetime import datetime
+
 router = APIRouter()
 
 # This defines what a user message looks like
 class UserMessage(BaseModel):
     message: str
+
+class AddItemRequest(BaseModel):
+    item: str
+    restaurant: str
+    price: int
 
 # Cart stored in memory for now
 cart = []
@@ -48,10 +54,11 @@ def get_restaurants():
     return {"restaurants": restaurants}
 
 @router.post("/order/process")
-def process_order(user_input: UserMessage):
+async def process_order(user_input: UserMessage):
     """Main endpoint - processes user voice message"""
     message = user_input.message.lower()
-    # Check if user wants to add a specific item by name
+
+    # Check if user wants to add specific item by name
     for restaurant in restaurants:
         for menu_item in restaurant["menu"]:
             if menu_item["item"].lower() in message:
@@ -92,6 +99,17 @@ def process_order(user_input: UserMessage):
         if len(cart) == 0:
             return {"response": "Your cart is empty. Please add items first."}
         total = calculate_total()
+
+        # Save order to MongoDB
+        order = {
+            "items": cart.copy(),
+            "total": total,
+            "status": "placed",
+            "timestamp": datetime.now().isoformat(),
+        }
+        await orders_collection.insert_one(order)
+        await history_collection.insert_one(order)
+
         cart.clear()
         return {
             "response": f"🎉 Order placed successfully! Total paid: ₹{total}. Your food is on the way!",
@@ -142,26 +160,8 @@ def process_order(user_input: UserMessage):
         "response": "I didn't understand that. Try saying something like 'I want a burger' or 'show my cart'."
     }
 
-@router.get("/cart")
-def get_cart():
-    """Get current cart"""
-    return {
-        "cart": cart,
-        "total": calculate_total()
-    }
-
-@router.delete("/cart/clear")
-def clear_cart():
-    """Clear the cart"""
-    cart.clear()
-    return {"response": "Cart cleared successfully!"}
-class AddItemRequest(BaseModel):
-    item: str
-    restaurant: str
-    price: int
-
 @router.post("/cart/add")
-def add_specific_item(request: AddItemRequest):
+async def add_specific_item(request: AddItemRequest):
     """Add a specific item directly to cart"""
     existing = next(
         (i for i in cart if i["item"] == request.item), None
@@ -180,3 +180,27 @@ def add_specific_item(request: AddItemRequest):
         "cart": cart,
         "total": calculate_total()
     }
+
+@router.get("/cart")
+def get_cart():
+    """Get current cart"""
+    return {
+        "cart": cart,
+        "total": calculate_total()
+    }
+
+@router.delete("/cart/clear")
+def clear_cart():
+    """Clear the cart"""
+    cart.clear()
+    return {"response": "Cart cleared successfully!"}
+
+@router.get("/orders/history")
+async def get_order_history():
+    """Get all past orders"""
+    orders = []
+    async for order in history_collection.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1):
+        orders.append(order)
+    return {"orders": orders}
