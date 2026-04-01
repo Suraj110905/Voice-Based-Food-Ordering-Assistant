@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaMicrophone, FaStop } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import axios from 'axios';
@@ -10,10 +10,10 @@ function VoiceInput({ onResponse }) {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [typedMessage, setTypedMessage] = useState('');
+  const recognitionRef = useRef(null);
 
-  // --------- VOICE RECOGNITION ---------
+  // --------- START LISTENING ---------
   const startListening = () => {
-    // Check if browser supports speech recognition
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -22,10 +22,18 @@ function VoiceInput({ onResponse }) {
       return;
     }
 
+    // Stop any existing recognition first
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognitionRef.current = recognition;
 
     recognition.start();
     setIsListening(true);
@@ -35,17 +43,30 @@ function VoiceInput({ onResponse }) {
       const spokenText = event.results[0][0].transcript;
       setTranscript(spokenText);
       setIsListening(false);
+      recognitionRef.current = null;
       sendToBackend(spokenText);
     };
 
     recognition.onerror = (event) => {
       setIsListening(false);
+      recognitionRef.current = null;
       toast.error('Could not hear you. Please try again!');
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      recognitionRef.current = null;
     };
+  };
+
+  // --------- STOP LISTENING ---------
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    toast('🛑 Stopped listening!', { duration: 1500 });
   };
 
   // --------- SEND TO BACKEND ---------
@@ -60,7 +81,6 @@ function VoiceInput({ onResponse }) {
       setResponse(data.response);
       speakResponse(data.response);
 
-      // Pass data up to App.js
       if (onResponse) {
         onResponse(data);
       }
@@ -75,6 +95,7 @@ function VoiceInput({ onResponse }) {
   // --------- TEXT TO SPEECH ---------
   const speakResponse = (text) => {
     const synth = window.speechSynthesis;
+    synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     utterance.rate = 0.9;
@@ -110,7 +131,7 @@ function VoiceInput({ onResponse }) {
           backgroundColor: isListening ? '#FF0000' : '#FF4500',
           transform: isListening ? 'scale(1.1)' : 'scale(1)',
         }}
-        onClick={startListening}
+        onClick={isListening ? stopListening : startListening}
         disabled={loading}
       >
         {isListening ? (
@@ -120,12 +141,12 @@ function VoiceInput({ onResponse }) {
         )}
       </button>
 
-      {/* Listening Status */}
+      {/* Status Text */}
       {isListening && (
-        <p style={styles.listeningText}>🔴 Listening...</p>
+        <p style={styles.listeningText}>
+          🔴 Listening... Click button to stop
+        </p>
       )}
-
-      {/* Loading Status */}
       {loading && (
         <p style={styles.loadingText}>⏳ Processing your order...</p>
       )}
