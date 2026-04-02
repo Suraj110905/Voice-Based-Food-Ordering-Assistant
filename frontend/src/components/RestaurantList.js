@@ -20,6 +20,19 @@ const addToCart = async (option) => {
     toast.error('Could not add item. Is backend running?');
   }
 };
+// ---------------ADD ITEM TO FAVOURITES------------------//
+const addToFavorites = async (option) => {
+  try {
+    const res = await axios.post('http://127.0.0.1:8000/favorites/add', {
+      item: option.item,
+      restaurant: option.restaurant,
+      price: option.price,
+    });
+    toast.success(res.data.response);
+  } catch (error) {
+    toast.error('Could not add to favorites!');
+  }
+};
 
   // --------- NO OPTIONS ---------
   if (!options || options.length === 0) {
@@ -57,6 +70,13 @@ const addToCart = async (option) => {
             {/* Card Footer */}
             <div style={styles.cardFooter}>
               <span style={styles.price}>₹{option.price}</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+               style={styles.favoriteButton}
+               onClick={() => addToFavorites(option)}
+              >
+              ❤️
+              </button>
               <button
                 style={styles.addButton}
                 onClick={() => addToCart(option)}
@@ -65,7 +85,7 @@ const addToCart = async (option) => {
                 Add
               </button>
             </div>
-
+           </div>
           </div>
         ))}
       </div>
@@ -163,6 +183,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
   },
+  favoriteButton: {
+  backgroundColor: '#FFE8E0',
+  border: 'none',
+  borderRadius: '8px',
+  padding: '6px 10px',
+  cursor: 'pointer',
+  fontSize: '14px',
+},
 };
 
 export default RestaurantList;
