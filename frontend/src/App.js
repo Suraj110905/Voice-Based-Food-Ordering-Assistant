@@ -8,6 +8,7 @@ import OrderConfirm from './components/OrderConfirm';
 import OrderHistory from './components/OrderHistory';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import Favorites from './components/Favorites';
 
 function App() {
   const [cart, setCart] = useState([]);
@@ -97,6 +98,11 @@ function App() {
       </div>
 
       <main style={styles.main}>
+      
+      {/* Favorites Tab */}
+{activeTab === 'favorites' && (
+  <Favorites onCartUpdate={fetchCart} />
+)}
 
         {/* Order History Tab */}
         {activeTab === 'history' && <OrderHistory />}
