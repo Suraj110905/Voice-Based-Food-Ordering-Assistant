@@ -115,7 +115,34 @@ async def process_order(user_input: UserMessage):
             "response": f"🎉 Order placed successfully! Total paid: ₹{total}. Your food is on the way!",
             "order_placed": True
         }
+    # Check if user wants to order usual favorites
+    if "order my usual" in message or "usual" in message:
+        favorites = []
+        async for fav in favorites_collection.find({}, {"_id": 0}):
+            favorites.append(fav)
 
+        if not favorites:
+            return {"response": "You have no favorites yet! Add some first."}
+
+        for fav in favorites:
+            existing = next(
+                (i for i in cart if i["item"] == fav["item"]), None
+            )
+            if existing:
+                existing["quantity"] += 1
+            else:
+                cart.append({
+                    "item": fav["item"],
+                    "restaurant": fav["restaurant"],
+                    "price": fav["price"],
+                    "quantity": 1
+                })
+
+        return {
+            "response": f"✅ Added all your favorites to cart! Total is ₹{calculate_total()}. Want to confirm order?",
+            "cart": cart,
+            "total": calculate_total()
+        }
     # Check if user wants to clear cart
     if "clear" in message or "remove all" in message or "cancel" in message:
         cart.clear()
@@ -204,3 +231,68 @@ async def get_order_history():
     ).sort("timestamp", -1):
         orders.append(order)
     return {"orders": orders}
+class FavoriteItem(BaseModel):
+    item: str
+    restaurant: str
+    price: int
+
+@router.post("/favorites/add")
+async def add_favorite(request: FavoriteItem):
+    """Add item to favorites"""
+    # Check if already in favorites
+    existing = await favorites_collection.find_one(
+        {"item": request.item}, {"_id": 0}
+    )
+    if existing:
+        return {"response": f"{request.item} is already in your favorites!"}
+
+    await favorites_collection.insert_one({
+        "item": request.item,
+        "restaurant": request.restaurant,
+        "price": request.price,
+    })
+    return {"response": f"❤️ {request.item} added to favorites!"}
+
+@router.get("/favorites")
+async def get_favorites():
+    """Get all favorites"""
+    favorites = []
+    async for fav in favorites_collection.find({}, {"_id": 0}):
+        favorites.append(fav)
+    return {"favorites": favorites}
+
+@router.delete("/favorites/{item_name}")
+async def remove_favorite(item_name: str):
+    """Remove item from favorites"""
+    await favorites_collection.delete_one({"item": item_name})
+    return {"response": f"Removed {item_name} from favorites!"}
+
+@router.post("/favorites/order-usual")
+async def order_usual():
+    """Add all favorites to cart"""
+    favorites = []
+    async for fav in favorites_collection.find({}, {"_id": 0}):
+        favorites.append(fav)
+
+    if not favorites:
+        return {"response": "You have no favorites yet! Add some first."}
+
+    for fav in favorites:
+        existing = next(
+            (i for i in cart if i["item"] == fav["item"]), None
+        )
+        if existing:
+            existing["quantity"] += 1
+        else:
+            cart.append({
+                "item": fav["item"],
+                "restaurant": fav["restaurant"],
+                "price": fav["price"],
+                "quantity": 1
+            })
+
+    return {
+        "response": f"✅ Added all {len(favorites)} favorites to cart!",
+        "cart": cart,
+        "total": calculate_total()
+    }
