@@ -77,6 +77,16 @@ function App() {
         <button
           style={{
             ...styles.tab,
+            backgroundColor: activeTab === 'favorites' ? '#FF4500' : 'white',
+            color: activeTab === 'favorites' ? 'white' : '#FF4500',
+          }}
+          onClick={() => setActiveTab('favorites')}
+        >
+          ❤️ Favorites
+        </button>
+        <button
+          style={{
+            ...styles.tab,
             backgroundColor: activeTab === 'history' ? '#FF4500' : 'white',
             color: activeTab === 'history' ? 'white' : '#FF4500',
           }}
