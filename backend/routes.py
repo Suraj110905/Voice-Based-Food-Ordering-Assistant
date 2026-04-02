@@ -15,8 +15,16 @@ class AddItemRequest(BaseModel):
     restaurant: str
     price: int
 
-# Cart stored in memory for now
+# Cart stored in memory
 cart = []
+
+# Conversation context
+context = {
+    "last_food": None,
+    "last_options": [],
+    "awaiting_restaurant": False,
+    "awaiting_confirmation": False,
+}
 
 # --------- HELPER FUNCTIONS ---------
 
@@ -56,9 +64,34 @@ def get_restaurants():
 @router.post("/order/process")
 async def process_order(user_input: UserMessage):
     """Main endpoint - processes user voice message"""
+    global context
     message = user_input.message.lower()
 
-    # Check if user wants to add specific item by name
+    # ---- CONTEXT: Waiting for restaurant selection ----
+    if context["awaiting_restaurant"] and context["last_options"]:
+        for option in context["last_options"]:
+            if option["restaurant"].lower() in message:
+                existing = next(
+                    (i for i in cart if i["item"] == option["item"]), None
+                )
+                if existing:
+                    existing["quantity"] += 1
+                else:
+                    cart.append({
+                        "item": option["item"],
+                        "restaurant": option["restaurant"],
+                        "price": option["price"],
+                        "quantity": 1
+                    })
+                context["awaiting_restaurant"] = False
+                context["last_options"] = []
+                return {
+                    "response": f"✅ Added {option['item']} from {option['restaurant']} to cart! Want anything else or shall I confirm the order?",
+                    "cart": cart,
+                    "total": calculate_total()
+                }
+
+    # ---- Check specific item by name ----
     for restaurant in restaurants:
         for menu_item in restaurant["menu"]:
             if menu_item["item"].lower() in message:
@@ -80,7 +113,7 @@ async def process_order(user_input: UserMessage):
                     "total": calculate_total()
                 }
 
-    # Check if user wants to see cart
+    # ---- Check cart/bill ----
     if "cart" in message or "bill" in message or "total" in message:
         if len(cart) == 0:
             return {"response": "Your cart is empty. What would you like to order?"}
@@ -89,18 +122,16 @@ async def process_order(user_input: UserMessage):
             f"{item['item']} x{item['quantity']}" for item in cart
         )
         return {
-            "response": f"Your cart has: {cart_summary}. Total bill is ₹{total}.",
+            "response": f"Your cart has: {cart_summary}. Total bill is ₹{total}. Say confirm to place order!",
             "cart": cart,
             "total": total
         }
 
-    # Check if user wants to confirm order
-    if "confirm" in message or "place order" in message or "yes" in message:
+    # ---- Confirm order ----
+    if "confirm" in message or "place order" in message:
         if len(cart) == 0:
             return {"response": "Your cart is empty. Please add items first."}
         total = calculate_total()
-
-        # Save order to MongoDB
         order = {
             "items": cart.copy(),
             "total": total,
@@ -109,21 +140,55 @@ async def process_order(user_input: UserMessage):
         }
         await orders_collection.insert_one(order)
         await history_collection.insert_one(order)
-
         cart.clear()
+        context["awaiting_confirmation"] = False
         return {
-            "response": f"🎉 Order placed successfully! Total paid: ₹{total}. Your food is on the way!",
+            "response": f"🎉 Order placed! Total paid ₹{total}. Food is on the way!",
             "order_placed": True
         }
-    # Check if user wants to order usual favorites
-    if "order my usual" in message or "usual" in message:
+
+    # ---- Yes/No handling ----
+    if message.strip() in ["yes", "yeah", "yep", "sure", "ok", "okay"]:
+        if context["awaiting_confirmation"]:
+            if len(cart) == 0:
+                return {"response": "Your cart is empty. Please add items first."}
+            total = calculate_total()
+            order = {
+                "items": cart.copy(),
+                "total": total,
+                "status": "placed",
+                "timestamp": datetime.now().isoformat(),
+            }
+            await orders_collection.insert_one(order)
+            await history_collection.insert_one(order)
+            cart.clear()
+            context["awaiting_confirmation"] = False
+            return {
+                "response": f"🎉 Order placed! Total paid ₹{total}. Food is on the way!",
+                "order_placed": True
+            }
+        return {
+            "response": "What would you like to order? Try saying 'I want a burger'!"
+        }
+
+    # ---- Clear cart ----
+    if "clear" in message or "remove all" in message or "cancel" in message:
+        cart.clear()
+        context = {
+            "last_food": None,
+            "last_options": [],
+            "awaiting_restaurant": False,
+            "awaiting_confirmation": False,
+        }
+        return {"response": "Cart cleared! What would you like to order?"}
+
+    # ---- Order usual ----
+    if "usual" in message or "order my usual" in message:
         favorites = []
         async for fav in favorites_collection.find({}, {"_id": 0}):
             favorites.append(fav)
-
         if not favorites:
             return {"response": "You have no favorites yet! Add some first."}
-
         for fav in favorites:
             existing = next(
                 (i for i in cart if i["item"] == fav["item"]), None
@@ -137,54 +202,60 @@ async def process_order(user_input: UserMessage):
                     "price": fav["price"],
                     "quantity": 1
                 })
-
+        context["awaiting_confirmation"] = True
         return {
-            "response": f"✅ Added all your favorites to cart! Total is ₹{calculate_total()}. Want to confirm order?",
+            "response": f"✅ Added all your favorites to cart! Total is ₹{calculate_total()}. Shall I confirm the order?",
             "cart": cart,
             "total": calculate_total()
         }
-    # Check if user wants to clear cart
-    if "clear" in message or "remove all" in message or "cancel" in message:
-        cart.clear()
-        return {"response": "Cart cleared. What would you like to order?"}
 
-    # Check what food the user wants
+    # ---- Food keyword matching ----
     food_keyword, items = find_food_in_message(message)
-
     if food_keyword:
         options = find_restaurants_for_food(food_keyword)
         if options:
-            # Add first result to cart automatically
-            first = options[0]
+            # If only one option just add it
+            if len(options) == 1:
+                first = options[0]
+                existing = next(
+                    (i for i in cart if i["item"] == first["item"]), None
+                )
+                if existing:
+                    existing["quantity"] += 1
+                else:
+                    cart.append({
+                        "item": first["item"],
+                        "restaurant": first["restaurant"],
+                        "price": first["price"],
+                        "quantity": 1
+                    })
+                return {
+                    "response": f"✅ Added {first['item']} from {first['restaurant']}! Want anything else?",
+                    "cart": cart,
+                    "options": options
+                }
 
-            # Check if item already in cart
-            existing = next(
-                (i for i in cart if i["item"] == first["item"]), None
-            )
-            if existing:
-                existing["quantity"] += 1
-            else:
-                cart.append({
-                    "item": first["item"],
-                    "restaurant": first["restaurant"],
-                    "price": first["price"],
-                    "quantity": 1
-                })
+            # Multiple options — ask user to choose
+            context["last_food"] = food_keyword
+            context["last_options"] = options
+            context["awaiting_restaurant"] = True
 
-            # Build response with all options
+            restaurant_names = list(set(o["restaurant"] for o in options))
+            restaurants_text = " or ".join(restaurant_names)
+
             options_text = " | ".join(
                 f"{o['item']} from {o['restaurant']} (₹{o['price']})"
                 for o in options
             )
 
             return {
-                "response": f"I found {food_keyword} options: {options_text}. I've added {first['item']} from {first['restaurant']} to your cart. Want anything else?",
+                "response": f"I found {food_keyword} at {restaurants_text}. Which restaurant do you prefer?",
                 "cart": cart,
                 "options": options
             }
 
     return {
-        "response": "I didn't understand that. Try saying something like 'I want a burger' or 'show my cart'."
+        "response": "I didn't understand that. Try saying 'I want a burger', 'show my cart', or 'confirm order'."
     }
 
 @router.post("/cart/add")
