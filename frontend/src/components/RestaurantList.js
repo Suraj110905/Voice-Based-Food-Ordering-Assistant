@@ -51,7 +51,14 @@ const addToFavorites = async (option) => {
       {/* Options Grid */}
       <div style={styles.grid}>
         {options.map((option, index) => (
-          <div key={index} style={styles.card}>
+          <div
+            key={index}
+            style={{
+              ...styles.card,
+              animationDelay: `${index * 0.1}s`
+            }}
+            className="card-hover fade-in"
+          >
 
             {/* Card Header */}
             <div style={styles.cardHeader}>

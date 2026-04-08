@@ -126,6 +126,7 @@ function VoiceInput({ onResponse }) {
 
       {/* Mic Button */}
       <button
+        className={isListening ? 'pulse-mic btn-hover' : 'btn-hover'}
         style={{
           ...styles.micButton,
           backgroundColor: isListening ? '#FF0000' : '#FF4500',
