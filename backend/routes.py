@@ -257,6 +257,7 @@ async def process_order(user_input: UserMessage):
     return {
         "response": "I didn't understand that. Try saying 'I want a burger', 'show my cart', or 'confirm order'."
     }
+    
 
 @router.post("/cart/add")
 async def add_specific_item(request: AddItemRequest):
