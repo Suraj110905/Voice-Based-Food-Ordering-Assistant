@@ -10,3 +10,6 @@ frontend/build/
 # System
 .DS_Store
 .env
+
+# api key
+backend/.env

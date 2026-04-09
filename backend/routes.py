@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from data import restaurants, food_keywords
 from database import orders_collection, favorites_collection, history_collection
 from datetime import datetime
+from ai_service import get_ai_response
 
 router = APIRouter()
 
@@ -365,6 +366,96 @@ async def order_usual():
 
     return {
         "response": f"✅ Added all {len(favorites)} favorites to cart!",
+        "cart": cart,
+        "total": calculate_total()
+    }
+class AIMessage(BaseModel):
+    message: str
+
+@router.post("/ai/chat")
+async def ai_chat(user_input: AIMessage):
+    """AI powered natural language endpoint"""
+    
+    # Get AI response
+    ai_response = await get_ai_response(user_input.message, cart)
+
+    if not ai_response:
+        return {
+            "response": "Sorry I couldn't understand that. Try saying 'I want a burger'!",
+            "cart": cart,
+            "total": calculate_total()
+        }
+
+    # Still process order logic alongside AI response
+    message = user_input.message.lower()
+
+    # Check for confirm
+    if "confirm" in message or "place order" in message:
+        if len(cart) > 0:
+            total = calculate_total()
+            order = {
+                "items": cart.copy(),
+                "total": total,
+                "status": "placed",
+                "timestamp": datetime.now().isoformat(),
+            }
+            await orders_collection.insert_one(order)
+            await history_collection.insert_one(order)
+            cart.clear()
+            return {
+                "response": ai_response,
+                "order_placed": True
+            }
+
+    # Check for specific items in message
+    for restaurant in restaurants:
+        for menu_item in restaurant["menu"]:
+            if menu_item["item"].lower() in message:
+                existing = next(
+                    (i for i in cart if i["item"] == menu_item["item"]), None
+                )
+                if existing:
+                    existing["quantity"] += 1
+                else:
+                    cart.append({
+                        "item": menu_item["item"],
+                        "restaurant": restaurant["name"],
+                        "price": menu_item["price"],
+                        "quantity": 1
+                    })
+                return {
+                    "response": ai_response,
+                    "cart": cart,
+                    "total": calculate_total()
+                }
+
+    # Check food keywords
+    food_keyword, items = find_food_in_message(message)
+    if food_keyword:
+        options = find_restaurants_for_food(food_keyword)
+        if options:
+            first = options[0]
+            existing = next(
+                (i for i in cart if i["item"] == first["item"]), None
+            )
+            if existing:
+                existing["quantity"] += 1
+            else:
+                cart.append({
+                    "item": first["item"],
+                    "restaurant": first["restaurant"],
+                    "price": first["price"],
+                    "quantity": 1
+                })
+            return {
+                "response": ai_response,
+                "cart": cart,
+                "options": options,
+                "total": calculate_total()
+            }
+
+    return {
+        "response": ai_response,
         "cart": cart,
         "total": calculate_total()
     }

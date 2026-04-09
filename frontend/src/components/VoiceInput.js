@@ -73,7 +73,7 @@ function VoiceInput({ onResponse }) {
   const sendToBackend = async (message) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://127.0.0.1:8000/order/process', {
+      const res = await axios.post('http://127.0.0.1:8000/ai/chat', {
         message: message,
       });
 
