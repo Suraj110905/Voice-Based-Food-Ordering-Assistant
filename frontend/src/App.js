@@ -116,7 +116,7 @@ function App() {
                 onNewOrder={handleNewOrder}
               />
             ) : (
-              <div style={styles.grid}>
+              <div style={styles.grid} className="grid-responsive">
                 <div style={styles.left}>
                   <VoiceInput onResponse={handleResponse} />
                   {options.length > 0 && (

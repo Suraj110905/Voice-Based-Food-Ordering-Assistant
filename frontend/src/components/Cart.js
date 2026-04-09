@@ -53,7 +53,11 @@ function Cart({ cart, total, onCartUpdate }) {
       {/* Cart Items */}
       <div style={styles.itemsList}>
         {cart.map((item, index) => (
-          <div key={index} style={styles.cartItem}>
+          <div
+            key={index}
+            style={styles.cartItem}
+            className="slide-in"
+          >
             <div style={styles.itemLeft}>
               <MdRestaurant style={styles.itemIcon} />
               <div>
