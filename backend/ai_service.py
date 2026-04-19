@@ -1,14 +1,13 @@
-from openai import OpenAI
+from groq import Groq
 from dotenv import load_dotenv
 from data import restaurants
 import os
-import json
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize Groq client
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Build restaurant menu context for AI
 def get_menu_context():
@@ -43,7 +42,7 @@ Examples of good responses:
 """
 
 async def get_ai_response(user_message: str, cart: list) -> str:
-    """Get AI response for user message"""
+    """Get AI response for user message using Groq"""
     try:
         # Build cart context
         cart_context = ""
@@ -54,12 +53,18 @@ async def get_ai_response(user_message: str, cart: list) -> str:
             total = sum(item['price'] * item['quantity'] for item in cart)
             cart_context = f"\nCurrent cart: {cart_items}. Total: ₹{total}"
 
-        # Call OpenAI API
+        # Call Groq API
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT + cart_context},
-                {"role": "user", "content": user_message}
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT + cart_context
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
             ],
             max_tokens=150,
             temperature=0.7,
@@ -68,5 +73,5 @@ async def get_ai_response(user_message: str, cart: list) -> str:
         return response.choices[0].message.content
 
     except Exception as e:
-        print(f"OpenAI error: {e}")
+        print(f"Groq error: {e}")
         return None
