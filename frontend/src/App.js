@@ -1,3 +1,4 @@
+import Recommendations from './components/Recommendations';
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
@@ -118,14 +119,15 @@ function App() {
             ) : (
               <div style={styles.grid} className="grid-responsive">
                 <div style={styles.left}>
-                  <VoiceInput onResponse={handleResponse} />
-                  {options.length > 0 && (
-                    <RestaurantList
-                      options={options}
-                      onCartUpdate={fetchCart}
-                    />
-                  )}
-                </div>
+              <VoiceInput onResponse={handleResponse} />
+              <Recommendations />
+              {options.length > 0 && (
+                <RestaurantList
+                  options={options}
+                  onCartUpdate={fetchCart}
+                />
+              )}
+            </div>
                 <div style={styles.right}>
                   <Cart
                     cart={cart}

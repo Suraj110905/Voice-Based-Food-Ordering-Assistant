@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from data import restaurants, food_keywords
 from database import orders_collection, favorites_collection, history_collection
 from datetime import datetime
-from ai_service import get_ai_response
+from ai_service import get_ai_response, get_recommendations
 
 router = APIRouter()
 
@@ -376,8 +376,17 @@ class AIMessage(BaseModel):
 async def ai_chat(user_input: AIMessage):
     """AI powered natural language endpoint"""
     
-    # Get AI response
-    ai_response = await get_ai_response(user_input.message, cart)
+    # Get order history for personalization
+    order_history = []
+    async for order in history_collection.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1).limit(3):
+        order_history.append(order)
+
+    # Get AI response with history context
+    ai_response = await get_ai_response(
+        user_input.message, cart, order_history
+    )
 
     if not ai_response:
         return {
@@ -459,3 +468,15 @@ async def ai_chat(user_input: AIMessage):
         "cart": cart,
         "total": calculate_total()
     }
+    
+@router.get("/recommendations")
+async def get_food_recommendations():
+    """Get personalized food recommendations"""
+    order_history = []
+    async for order in history_collection.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1).limit(5):
+        order_history.append(order)
+
+    recommendation = await get_recommendations(order_history)
+    return {"recommendation": recommendation}
