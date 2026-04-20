@@ -9,6 +9,7 @@ import OrderHistory from './components/OrderHistory';
 import Favorites from './components/Favorites';
 import Recommendations from './components/Recommendations';
 import SearchBar from './components/SearchBar';
+import Statistics from './components/Statistics';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -89,6 +90,16 @@ function App() {
         <button
           style={{
             ...styles.tab,
+            backgroundColor: activeTab === 'stats' ? '#FF4500' : 'white',
+            color: activeTab === 'stats' ? 'white' : '#FF4500',
+          }}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Statistics
+        </button>
+        <button
+          style={{
+            ...styles.tab,
             backgroundColor: activeTab === 'favorites' ? '#FF4500' : 'white',
             color: activeTab === 'favorites' ? 'white' : '#FF4500',
           }}
@@ -109,6 +120,9 @@ function App() {
       </div>
 
       <main style={styles.main}>
+
+        {/* Statistics Tab */}
+        {activeTab === 'stats' && <Statistics />}
 
         {/* Search Tab */}
         {activeTab === 'search' && (

@@ -517,3 +517,65 @@ def search_food(q: str):
                     })
 
     return {"results": results}
+
+@router.get("/stats")
+async def get_statistics():
+    """Get order statistics"""
+    orders = []
+    async for order in history_collection.find({}, {"_id": 0}):
+        orders.append(order)
+
+    if not orders:
+        return {
+            "total_orders": 0,
+            "total_spent": 0,
+            "favourite_food": None,
+            "top_restaurant": None,
+            "most_ordered": []
+        }
+
+    # Calculate total orders and spent
+    total_orders = len(orders)
+    total_spent = sum(
+        order.get("total", 0) + 30 for order in orders
+    )
+
+    # Count item frequencies
+    item_counts = {}
+    restaurant_counts = {}
+
+    for order in orders:
+        for item in order.get("items", []):
+            item_name = item["item"]
+            restaurant = item["restaurant"]
+
+            item_counts[item_name] = (
+                item_counts.get(item_name, 0) + item["quantity"]
+            )
+            restaurant_counts[restaurant] = (
+                restaurant_counts.get(restaurant, 0) + 1
+            )
+
+    # Find favourite food and top restaurant
+    favourite_food = max(
+        item_counts, key=item_counts.get
+    ) if item_counts else None
+
+    top_restaurant = max(
+        restaurant_counts, key=restaurant_counts.get
+    ) if restaurant_counts else None
+
+    # Get top 5 most ordered items
+    most_ordered = sorted(
+        [{"name": k, "count": v} for k, v in item_counts.items()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:5]
+
+    return {
+        "total_orders": total_orders,
+        "total_spent": total_spent,
+        "favourite_food": favourite_food,
+        "top_restaurant": top_restaurant,
+        "most_ordered": most_ordered
+    }
