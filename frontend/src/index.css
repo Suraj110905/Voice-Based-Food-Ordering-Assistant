@@ -6,8 +6,9 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #F5F5F5;
+  background: linear-gradient(135deg, #FFF5F0 0%, #FFF0E8 100%);
   color: #333;
+  min-height: 100vh;
 }
 
 /* --------- ANIMATIONS --------- */
@@ -38,6 +39,11 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
 /* --------- GLOBAL CLASSES --------- */
 
 .fade-in {
@@ -56,6 +62,10 @@ body {
   animation: bounce 1s infinite;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 /* --------- CARD HOVER EFFECTS --------- */
 
 .card-hover {
@@ -64,7 +74,7 @@ body {
 
 .card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+  box-shadow: 0 8px 25px rgba(255,69,0,0.15) !important;
 }
 
 /* --------- BUTTON EFFECTS --------- */
@@ -78,6 +88,20 @@ body {
   filter: brightness(1.1);
 }
 
+/* --------- LOADING SKELETON --------- */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
 /* --------- SCROLLBAR --------- */
 
 ::-webkit-scrollbar {
@@ -86,11 +110,23 @@ body {
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #FF4500;
   border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cc3700;
+}
+
+/* --------- SELECTION COLOR --------- */
+
+::selection {
+  background: #FF4500;
+  color: white;
 }
 
 /* --------- RESPONSIVE --------- */
@@ -102,5 +138,21 @@ body {
 
   .hide-mobile {
     display: none !important;
+  }
+
+  .tab-bar-responsive {
+    gap: 5px !important;
+    padding: 10px !important;
+  }
+
+  .tab-responsive {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-responsive {
+    padding: 15px !important;
   }
 }

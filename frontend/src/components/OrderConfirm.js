@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { MdDeliveryDining } from 'react-icons/md';
+import { BsStarFill } from 'react-icons/bs';
 
 function OrderConfirm({ total, onNewOrder }) {
 
-  // Speak confirmation message
   useEffect(() => {
     const message = `Your order has been placed successfully! Total paid is rupees ${total + 30}. Your food is on the way!`;
     const synth = window.speechSynthesis;
@@ -15,22 +15,31 @@ function OrderConfirm({ total, onNewOrder }) {
   }, []);
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className="fade-in">
 
-      {/* Success Icon */}
-      <div style={styles.iconSection}>
+      {/* Success Animation */}
+      <div style={styles.successCircle}>
         <FaCheckCircle style={styles.checkIcon} />
       </div>
 
       {/* Title */}
       <h2 style={styles.title}>Order Placed! 🎉</h2>
       <p style={styles.subtitle}>
-        Your food is being prepared and will arrive soon!
+        Your food is being prepared with love!
       </p>
+
+      {/* Stars */}
+      <div style={styles.stars}>
+        {[1,2,3,4,5].map(i => (
+          <BsStarFill key={i} style={styles.star} />
+        ))}
+      </div>
 
       {/* Delivery Info */}
       <div style={styles.deliveryCard}>
-        <MdDeliveryDining style={styles.deliveryIcon} />
+        <div style={styles.deliveryLeft}>
+          <MdDeliveryDining style={styles.deliveryIcon} />
+        </div>
         <div>
           <p style={styles.deliveryTitle}>Estimated Delivery Time</p>
           <p style={styles.deliveryTime}>30 - 45 minutes</p>
@@ -55,7 +64,11 @@ function OrderConfirm({ total, onNewOrder }) {
       </div>
 
       {/* New Order Button */}
-      <button style={styles.newOrderButton} onClick={onNewOrder}>
+      <button
+        style={styles.newOrderButton}
+        className="btn-hover"
+        onClick={onNewOrder}
+      >
         🎤 Place New Order
       </button>
 
@@ -66,28 +79,47 @@ function OrderConfirm({ total, onNewOrder }) {
 const styles = {
   container: {
     backgroundColor: 'white',
-    borderRadius: '16px',
+    borderRadius: '20px',
     padding: '40px 30px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
     textAlign: 'center',
-    marginBottom: '20px',
+    maxWidth: '500px',
+    margin: '0 auto',
   },
-  iconSection: {
-    marginBottom: '20px',
+  successCircle: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    backgroundColor: '#E8FFE8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 20px auto',
+    border: '3px solid #00AA44',
   },
   checkIcon: {
-    fontSize: '70px',
+    fontSize: '60px',
     color: '#00AA44',
   },
   title: {
-    fontSize: '26px',
+    fontSize: '28px',
     color: '#333',
     marginBottom: '10px',
   },
   subtitle: {
     fontSize: '15px',
     color: '#888',
+    marginBottom: '15px',
+  },
+  stars: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '5px',
     marginBottom: '25px',
+  },
+  star: {
+    color: '#FFB800',
+    fontSize: '20px',
   },
   deliveryCard: {
     display: 'flex',
@@ -100,9 +132,16 @@ const styles = {
     marginBottom: '20px',
     textAlign: 'left',
   },
+  deliveryLeft: {
+    backgroundColor: '#00AA44',
+    borderRadius: '10px',
+    padding: '8px',
+    display: 'flex',
+    alignItems: 'center',
+  },
   deliveryIcon: {
-    fontSize: '40px',
-    color: '#00AA44',
+    fontSize: '30px',
+    color: 'white',
   },
   deliveryTitle: {
     margin: 0,
@@ -147,11 +186,11 @@ const styles = {
   },
   grandAmount: {
     color: '#00AA44',
-    fontSize: '20px',
+    fontSize: '22px',
     fontWeight: 'bold',
   },
   newOrderButton: {
-    backgroundColor: '#FF4500',
+    background: 'linear-gradient(135deg, #FF4500 0%, #FF6B35 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
@@ -160,6 +199,7 @@ const styles = {
     fontWeight: 'bold',
     cursor: 'pointer',
     boxShadow: '0 4px 15px rgba(255,69,0,0.3)',
+    width: '100%',
   },
 };
 
