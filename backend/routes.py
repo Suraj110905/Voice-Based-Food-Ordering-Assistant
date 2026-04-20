@@ -488,3 +488,32 @@ async def combo_suggestion():
         return {"suggestion": None}
     suggestion = await get_combo_suggestion(cart)
     return {"suggestion": suggestion}
+
+@router.get("/search")
+def search_food(q: str):
+    """Search food items and restaurants"""
+    query = q.lower()
+    results = []
+
+    for restaurant in restaurants:
+        # Match restaurant name
+        if query in restaurant["name"].lower():
+            for item in restaurant["menu"]:
+                results.append({
+                    "item": item["item"],
+                    "restaurant": restaurant["name"],
+                    "price": item["price"],
+                    "cuisine": restaurant["cuisine"],
+                })
+        else:
+            # Match menu items
+            for item in restaurant["menu"]:
+                if query in item["item"].lower():
+                    results.append({
+                        "item": item["item"],
+                        "restaurant": restaurant["name"],
+                        "price": item["price"],
+                        "cuisine": restaurant["cuisine"],
+                    })
+
+    return {"results": results}

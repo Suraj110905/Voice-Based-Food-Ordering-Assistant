@@ -1,4 +1,3 @@
-import Recommendations from './components/Recommendations';
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
@@ -7,9 +6,11 @@ import Cart from './components/Cart';
 import RestaurantList from './components/RestaurantList';
 import OrderConfirm from './components/OrderConfirm';
 import OrderHistory from './components/OrderHistory';
+import Favorites from './components/Favorites';
+import Recommendations from './components/Recommendations';
+import SearchBar from './components/SearchBar';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import Favorites from './components/Favorites';
 
 function App() {
   const [cart, setCart] = useState([]);
@@ -19,7 +20,6 @@ function App() {
   const [finalTotal, setFinalTotal] = useState(0);
   const [activeTab, setActiveTab] = useState('order');
 
-  // Fetch cart from backend
   const fetchCart = async () => {
     try {
       const res = await axios.get('http://127.0.0.1:8000/cart');
@@ -79,6 +79,16 @@ function App() {
         <button
           style={{
             ...styles.tab,
+            backgroundColor: activeTab === 'search' ? '#FF4500' : 'white',
+            color: activeTab === 'search' ? 'white' : '#FF4500',
+          }}
+          onClick={() => setActiveTab('search')}
+        >
+          🔍 Search
+        </button>
+        <button
+          style={{
+            ...styles.tab,
             backgroundColor: activeTab === 'favorites' ? '#FF4500' : 'white',
             color: activeTab === 'favorites' ? 'white' : '#FF4500',
           }}
@@ -99,11 +109,16 @@ function App() {
       </div>
 
       <main style={styles.main}>
-      
-      {/* Favorites Tab */}
-{activeTab === 'favorites' && (
-  <Favorites onCartUpdate={fetchCart} />
-)}
+
+        {/* Search Tab */}
+        {activeTab === 'search' && (
+          <SearchBar onCartUpdate={fetchCart} />
+        )}
+
+        {/* Favorites Tab */}
+        {activeTab === 'favorites' && (
+          <Favorites onCartUpdate={fetchCart} />
+        )}
 
         {/* Order History Tab */}
         {activeTab === 'history' && <OrderHistory />}
@@ -119,15 +134,15 @@ function App() {
             ) : (
               <div style={styles.grid} className="grid-responsive">
                 <div style={styles.left}>
-              <VoiceInput onResponse={handleResponse} />
-              <Recommendations />
-              {options.length > 0 && (
-                <RestaurantList
-                  options={options}
-                  onCartUpdate={fetchCart}
-                />
-              )}
-            </div>
+                  <VoiceInput onResponse={handleResponse} />
+                  <Recommendations />
+                  {options.length > 0 && (
+                    <RestaurantList
+                      options={options}
+                      onCartUpdate={fetchCart}
+                    />
+                  )}
+                </div>
                 <div style={styles.right}>
                   <Cart
                     cart={cart}
@@ -153,13 +168,14 @@ const styles = {
     padding: '15px',
     backgroundColor: 'white',
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    flexWrap: 'wrap',
   },
   tab: {
-    padding: '10px 30px',
+    padding: '10px 25px',
     borderRadius: '25px',
     border: '2px solid #FF4500',
     cursor: 'pointer',
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 'bold',
     transition: 'all 0.3s ease',
   },
