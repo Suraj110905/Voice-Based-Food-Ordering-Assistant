@@ -129,3 +129,38 @@ async def get_recommendations(order_history: list) -> str:
     except Exception as e:
         print(f"Groq recommendations error: {e}")
         return "Try our popular McAloo Tikki from McDonald's for ₹50!"
+
+async def get_combo_suggestion(cart: list) -> str:
+    """Suggest combo items based on current cart"""
+    try:
+        if not cart:
+            return None
+
+        # Build cart context
+        cart_items = ", ".join(
+            f"{item['item']} from {item['restaurant']}"
+            for item in cart
+        )
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": f"I have {cart_items} in my cart. Suggest one complementary item from the menu that would go well with my order. Keep it very short — one sentence only."
+                }
+            ],
+            max_tokens=80,
+            temperature=0.7,
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        print(f"Combo suggestion error: {e}")
+        return None
+    

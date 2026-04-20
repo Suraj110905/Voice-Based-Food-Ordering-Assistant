@@ -1,10 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaShoppingCart, FaTrash } from 'react-icons/fa';
 import { MdRestaurant } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 function Cart({ cart, total, onCartUpdate }) {
+  const [comboSuggestion, setComboSuggestion] = useState('');
+
+  useEffect(() => {
+    if (cart && cart.length > 0) {
+      fetchComboSuggestion();
+    } else {
+      setComboSuggestion('');
+    }
+  }, [cart]);
+
+  const fetchComboSuggestion = async () => {
+    try {
+      const res = await axios.get(
+        'http://127.0.0.1:8000/cart/combo-suggestion'
+      );
+      if (res.data.suggestion) {
+        setComboSuggestion(res.data.suggestion);
+      }
+    } catch (error) {
+      console.log('Could not fetch combo suggestion');
+    }
+  };
 
   // --------- CLEAR CART ---------
   const clearCart = async () => {
@@ -97,6 +119,14 @@ function Cart({ cart, total, onCartUpdate }) {
           </span>
         </div>
       </div>
+
+      {/* Combo Suggestion */}
+      {comboSuggestion && (
+        <div style={styles.comboBox}>
+          <p style={styles.comboTitle}>🤖 AI Suggestion</p>
+          <p style={styles.comboText}>{comboSuggestion}</p>
+        </div>
+      )}
 
       {/* Confirm Hint */}
       <p style={styles.confirmHint}>
@@ -246,6 +276,25 @@ const styles = {
     color: '#FF4500',
     fontSize: '18px',
     fontWeight: 'bold',
+  },
+  comboBox: {
+    backgroundColor: '#FFF3F0',
+    borderRadius: '10px',
+    padding: '12px 15px',
+    marginBottom: '12px',
+    border: '1px solid #FFD0C0',
+  },
+  comboTitle: {
+    margin: '0 0 5px 0',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: '#FF4500',
+  },
+  comboText: {
+    margin: 0,
+    fontSize: '13px',
+    color: '#333',
+    lineHeight: '1.5',
   },
   confirmHint: {
     textAlign: 'center',

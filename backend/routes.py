@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from data import restaurants, food_keywords
 from database import orders_collection, favorites_collection, history_collection
 from datetime import datetime
-from ai_service import get_ai_response, get_recommendations
+from ai_service import get_ai_response, get_recommendations, get_combo_suggestion
 
 router = APIRouter()
 
@@ -480,3 +480,11 @@ async def get_food_recommendations():
 
     recommendation = await get_recommendations(order_history)
     return {"recommendation": recommendation}
+
+@router.get("/cart/combo-suggestion")
+async def combo_suggestion():
+    """Get AI combo suggestion based on current cart"""
+    if not cart:
+        return {"suggestion": None}
+    suggestion = await get_combo_suggestion(cart)
+    return {"suggestion": suggestion}
