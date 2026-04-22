@@ -194,3 +194,119 @@ async def update_secret_code(request: UpdateSecretCodeRequest):
         {"$set": {"secret_code": request.new_code.upper()}}
     )
     return {"message": "✅ Secret code updated successfully!"}
+class ManualPaymentRequest(BaseModel):
+    username: str
+    order_total: float
+    cart: list
+
+@wallet_router.post("/manual-payment")
+async def manual_payment(request: ManualPaymentRequest):
+    """Process payment manually without secret code"""
+    wallet = await wallets_collection.find_one(
+        {"username": request.username}
+    )
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found!")
+
+    # Check if manual payment is enabled
+    if not wallet.get("manual_payment_enabled", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Manual payment is disabled! Use voice payment."
+        )
+
+    # Check balance
+    total_with_delivery = request.order_total + 30
+    if wallet["balance"] < total_with_delivery:
+        raise HTTPException(
+            status_code=400,
+            detail=f"❌ Insufficient balance! You need ₹{total_with_delivery} but have ₹{wallet['balance']:.0f}"
+        )
+
+    # Deduct balance
+    new_balance = wallet["balance"] - total_with_delivery
+    transaction = {
+        "type": "debit",
+        "amount": total_with_delivery,
+        "description": "Food order - Manual payment",
+        "timestamp": datetime.now().isoformat(),
+        "balance_after": new_balance
+    }
+
+    await wallets_collection.update_one(
+        {"username": request.username},
+        {
+            "$set": {"balance": new_balance},
+            "$push": {"transactions": transaction}
+        }
+    )
+
+    # Save order
+    order = {
+        "username": request.username,
+        "items": request.cart,
+        "total": request.order_total,
+        "delivery_fee": 30,
+        "grand_total": total_with_delivery,
+        "status": "confirmed",
+        "payment_method": "wallet_manual",
+        "timestamp": datetime.now().isoformat(),
+    }
+    await orders_collection.insert_one(order)
+    await history_collection.insert_one({**order})
+
+    return {
+        "message": f"✅ Payment successful!",
+        "new_balance": new_balance,
+        "order_placed": True,
+        "response": f"🎉 Order placed! ₹{total_with_delivery} deducted from wallet. Balance: ₹{new_balance:.0f}"
+    }
+
+class TogglePaymentRequest(BaseModel):
+    username: str
+    enable_voice: bool
+    enable_manual: bool
+
+@wallet_router.put("/toggle-payment-modes")
+async def toggle_payment_modes(request: TogglePaymentRequest):
+    """Toggle voice and manual payment modes"""
+    wallet = await wallets_collection.find_one(
+        {"username": request.username}
+    )
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found!")
+
+    await wallets_collection.update_one(
+        {"username": request.username},
+        {
+            "$set": {
+                "voice_payment_enabled": request.enable_voice,
+                "manual_payment_enabled": request.enable_manual,
+            }
+        }
+    )
+
+    modes = []
+    if request.enable_voice:
+        modes.append("Voice Payment")
+    if request.enable_manual:
+        modes.append("Manual Payment")
+
+    return {
+        "message": f"✅ Payment modes updated! Active: {', '.join(modes) if modes else 'None'}",
+        "voice_payment_enabled": request.enable_voice,
+        "manual_payment_enabled": request.enable_manual,
+    }
+
+@wallet_router.get("/{username}/payment-modes")
+async def get_payment_modes(username: str):
+    """Get current payment mode settings"""
+    wallet = await wallets_collection.find_one(
+        {"username": username}, {"_id": 0, "secret_code": 0}
+    )
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found!")
+    return {
+        "voice_payment_enabled": wallet.get("voice_payment_enabled", True),
+        "manual_payment_enabled": wallet.get("manual_payment_enabled", True),
+    }

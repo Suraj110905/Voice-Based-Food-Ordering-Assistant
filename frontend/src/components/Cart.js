@@ -4,7 +4,7 @@ import { MdRestaurant } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-function Cart({ cart, total, onCartUpdate }) {
+function Cart({ cart, total, onCartUpdate, onVoicePayment, onManualPayment }) {
   const [comboSuggestion, setComboSuggestion] = useState('');
 
   useEffect(() => {
@@ -128,10 +128,27 @@ function Cart({ cart, total, onCartUpdate }) {
         </div>
       )}
 
-      {/* Confirm Hint */}
-      <p style={styles.confirmHint}>
-        🎤 Say or type <strong>"confirm order"</strong> to place your order!
-      </p>
+      {/* Payment Buttons */}
+      <div style={styles.paymentSection}>
+        <p style={styles.paymentTitle}>💳 Pay with Wallet</p>
+        <div style={styles.paymentButtons}>
+          <button
+            style={styles.voicePayButton}
+            onClick={onVoicePayment}
+          >
+            🎤 Voice Pay
+          </button>
+          <button
+            style={styles.manualPayButton}
+            onClick={onManualPayment}
+          >
+            🖱️ Manual Pay
+          </button>
+        </div>
+        <p style={styles.confirmHint}>
+          🎤 Or say <strong>"confirm order"</strong>
+        </p>
+      </div>
 
     </div>
   );
@@ -303,6 +320,43 @@ const styles = {
     backgroundColor: '#FFF3F0',
     padding: '10px',
     borderRadius: '8px',
+  },
+  paymentSection: {
+    marginTop: '10px',
+  },
+  paymentTitle: {
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#FF4500',
+    margin: '0 0 8px 0',
+    textAlign: 'center',
+  },
+  paymentButtons: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '10px',
+  },
+  voicePayButton: {
+    flex: 1,
+    backgroundColor: '#FF4500',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '12px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  manualPayButton: {
+    flex: 1,
+    backgroundColor: 'white',
+    color: '#FF4500',
+    border: '2px solid #FF4500',
+    borderRadius: '8px',
+    padding: '12px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
   },
 };
 

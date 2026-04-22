@@ -15,6 +15,8 @@ import Register from './components/Register';
 import { useAuth } from './components/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import Wallet from './components/Wallet';
+import toast from 'react-hot-toast';
 
 function App() {
   const { user, logout, loading } = useAuth();
@@ -92,6 +94,40 @@ function App() {
     );
   }
 
+  const handleVoicePayment = () => {
+    if (cart.length === 0) {
+      toast.error('Your cart is empty!');
+      return;
+    }
+    setActiveTab('voice-payment');
+  };
+
+  const handleManualPayment = async () => {
+    if (cart.length === 0) {
+      toast.error('Your cart is empty!');
+      return;
+    }
+    try {
+      const res = await axios.post(
+        'http://127.0.0.1:8000/wallet/manual-payment',
+        {
+          username: user.username,
+          order_total: total,
+          cart: cart,
+        }
+      );
+      setFinalTotal(total);
+      setOrderPlaced(true);
+      setCart([]);
+      setTotal(0);
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.detail || 'Payment failed!'
+      );
+    }
+  };
+
   // --------- MAIN APP ---------
   return (
     <div className="App">
@@ -151,8 +187,21 @@ function App() {
           📊 Statistics
         </button>
       </div>
+      <button
+          style={{
+            ...styles.tab,
+            backgroundColor: activeTab === 'wallet' ? '#FF4500' : 'white',
+            color: activeTab === 'wallet' ? 'white' : '#FF4500',
+          }}
+          onClick={() => setActiveTab('wallet')}
+        >
+          💳 Wallet
+        </button>
 
       <main style={styles.main}>
+
+        {/* Wallet Tab */}
+        {activeTab === 'wallet' && <Wallet />}
 
         {/* Search Tab */}
         {activeTab === 'search' && (
@@ -195,6 +244,8 @@ function App() {
                     cart={cart}
                     total={total}
                     onCartUpdate={fetchCart}
+                    onVoicePayment={handleVoicePayment}
+                    onManualPayment={handleManualPayment}
                   />
                 </div>
               </div>
