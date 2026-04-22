@@ -4,11 +4,9 @@ import { MdRestaurant } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { menuData } from '../data/menuData';
-import ManualMenu from './ManualMenu';
 
 function ManualMenu({ onResponse }) {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [manualMode, setManualMode] = useState(false);
 
   const addToCart = async (item, restaurantName) => {
     try {
@@ -41,113 +39,85 @@ function ManualMenu({ onResponse }) {
   return (
     <div style={styles.container}>
 
-      {/* Mode Toggle */}
-      <div style={styles.modeToggle}>
+      {/* Restaurant Tabs */}
+      <div style={styles.restaurantTabs}>
         <button
           style={{
-            ...styles.modeButton,
-            backgroundColor: !manualMode ? '#FF4500' : 'white',
-            color: !manualMode ? 'white' : '#FF4500',
+            ...styles.restaurantTab,
+            backgroundColor: !selectedRestaurant ? '#FF4500' : '#FFF3F0',
+            color: !selectedRestaurant ? 'white' : '#FF4500',
           }}
-          onClick={() => setManualMode(false)}
+          onClick={() => setSelectedRestaurant(null)}
         >
-          🎤 Voice Mode
+          All
         </button>
-        <button
-          style={{
-            ...styles.modeButton,
-            backgroundColor: manualMode ? '#FF4500' : 'white',
-            color: manualMode ? 'white' : '#FF4500',
-          }}
-          onClick={() => setManualMode(true)}
-        >
-          🖱️ Manual Mode
-        </button>
+        {menuData.map((restaurant) => (
+          <button
+            key={restaurant.id}
+            style={{
+              ...styles.restaurantTab,
+              backgroundColor: selectedRestaurant === restaurant.id
+                ? '#FF4500' : '#FFF3F0',
+              color: selectedRestaurant === restaurant.id
+                ? 'white' : '#FF4500',
+            }}
+            onClick={() => setSelectedRestaurant(restaurant.id)}
+          >
+            {restaurant.name}
+          </button>
+        ))}
       </div>
 
-      {/* Title */}
-      <h2 style={styles.title}>
-        {manualMode ? '🖱️ Manual Order' : '🎤 Voice Assistant'}
-      </h2>
+      {/* Menu Items */}
+      {menuData
+        .filter(r => !selectedRestaurant || r.id === selectedRestaurant)
+        .map((restaurant) => (
+          <div key={restaurant.id} style={styles.restaurantSection}>
 
-      {!manualMode && (
-        <>
-          <p style={styles.hint}>
-            Press the mic and say something like{' '}
-            <strong>"I want a burger"</strong>
-          </p>
-
-          {/* Mic Button */}
-          <button
-            className={isListening ? 'pulse-mic btn-hover' : 'btn-hover'}
-            style={{
-              ...styles.micButton,
-              backgroundColor: isListening ? '#FF0000' : '#FF4500',
-              transform: isListening ? 'scale(1.1)' : 'scale(1)',
-            }}
-            onClick={isListening ? stopListening : startListening}
-            disabled={loading}
-          >
-            {isListening ? (
-              <FaStop style={styles.micIcon} />
-            ) : (
-              <FaMicrophone style={styles.micIcon} />
-            )}
-          </button>
-
-          {isListening && (
-            <p style={styles.listeningText}>
-              🔴 Listening... Click button to stop
-            </p>
-          )}
-          {loading && (
-            <p style={styles.loadingText}>
-              ⏳ Processing your order...
-            </p>
-          )}
-
-          <div style={styles.divider}>
-            <span style={styles.dividerText}>or type your order</span>
-          </div>
-
-          <div style={styles.inputRow}>
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Type: I want a pizza..."
-              value={typedMessage}
-              onChange={(e) => setTypedMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleTypedSubmit()}
-            />
-            <button
-              style={styles.sendButton}
-              onClick={handleTypedSubmit}
-              disabled={loading}
-            >
-              Send
-            </button>
-          </div>
-
-          {transcript && (
-            <div style={styles.transcriptBox}>
-              <strong>You said:</strong> {transcript}
+            {/* Restaurant Header */}
+            <div style={styles.restaurantHeader}>
+              <MdRestaurant style={styles.restaurantIcon} />
+              <div>
+                <h3 style={styles.restaurantName}>{restaurant.name}</h3>
+                <div style={styles.restaurantInfo}>
+                  <FaStar style={styles.starIcon} />
+                  <span style={styles.rating}>{restaurant.rating}</span>
+                  <span style={styles.cuisine}>{restaurant.cuisine}</span>
+                </div>
+              </div>
             </div>
-          )}
 
-          {response && (
-            <div style={styles.responseBox}>
-              <BsChatDotsFill style={styles.chatIcon} />
-              <p style={styles.responseText}>{response}</p>
+            {/* Menu Grid */}
+            <div style={styles.menuGrid}>
+              {restaurant.menu.map((item, index) => (
+                <div
+                  key={index}
+                  style={styles.menuCard}
+                  className="card-hover"
+                >
+                  <p style={styles.itemName}>{item.item}</p>
+                  <p style={styles.itemPrice}>₹{item.price}</p>
+                  <div style={styles.cardButtons}>
+                    <button
+                      style={styles.favButton}
+                      onClick={() => addToFavorites(item, restaurant.name)}
+                    >
+                      <FaHeart />
+                    </button>
+                    <button
+                      style={styles.addButton}
+                      onClick={() => addToCart(item, restaurant.name)}
+                    >
+                      <FaPlus style={{ marginRight: '4px' }} />
+                      Add
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
 
-      {/* Manual Mode Menu */}
-      {manualMode && (
-        <ManualMenu onResponse={onResponse} />
-      )}
-
+          </div>
+        ))}
     </div>
   );
 }
@@ -264,21 +234,6 @@ const styles = {
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-  },
-  modeToggle: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '20px',
-    justifyContent: 'center',
-  },
-  modeButton: {
-    padding: '8px 20px',
-    borderRadius: '20px',
-    border: '2px solid #FF4500',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease',
   },
 };
 

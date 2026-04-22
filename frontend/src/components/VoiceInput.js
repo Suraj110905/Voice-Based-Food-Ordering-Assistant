@@ -4,6 +4,7 @@ import { BsChatDotsFill } from 'react-icons/bs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { restaurants } from '../data/menuData';
+import ManualMenu from './ManualMenu';
 
 function VoiceInput({ onResponse }) {
   const [manualMode, setManualMode] = useState(false);
@@ -147,80 +148,83 @@ function VoiceInput({ onResponse }) {
       <h2 style={styles.title}>
         {manualMode ? '🖱️ Manual Order' : '🎤 Voice Assistant'}
       </h2>
-      <p style={styles.hint}>
-        Press the mic and say something like{' '}
-        <strong>"I want a burger"</strong>
-      </p>
 
-      {/* Mic Button - only in voice mode */}
-      {!manualMode && <button
-        className={isListening ? 'pulse-mic btn-hover' : 'btn-hover'}
-        style={{
-          ...styles.micButton,
-          backgroundColor: isListening ? '#FF0000' : '#FF4500',
-          transform: isListening ? 'scale(1.1)' : 'scale(1)',
-        }}
-        onClick={isListening ? stopListening : startListening}
-        disabled={loading}
-      >
-        {isListening ? (
-          <FaStop style={styles.micIcon} />
-        ) : (
-          <FaMicrophone style={styles.micIcon} />
-        )}
-      </button>}
-
-      {/* Status Text */}
-      {isListening && (
-        <p style={styles.listeningText}>
-          🔴 Listening... Click button to stop
-        </p>
-      )}
-      {loading && (
-        <p style={styles.loadingText}>⏳ Processing your order...</p>
-      )}
-
-      {/* Divider - only show in voice mode */}
       {!manualMode && (
-        <div style={styles.divider}>
-          <span style={styles.dividerText}>or type your order</span>
-        </div>
+        <>
+          <p style={styles.hint}>
+            Press the mic and say something like{' '}
+            <strong>"I want a burger"</strong>
+          </p>
+
+          {/* Mic Button */}
+          <button
+            className={isListening ? 'pulse-mic btn-hover' : 'btn-hover'}
+            style={{
+              ...styles.micButton,
+              backgroundColor: isListening ? '#FF0000' : '#FF4500',
+              transform: isListening ? 'scale(1.1)' : 'scale(1)',
+            }}
+            onClick={isListening ? stopListening : startListening}
+            disabled={loading}
+          >
+            {isListening ? (
+              <FaStop style={styles.micIcon} />
+            ) : (
+              <FaMicrophone style={styles.micIcon} />
+            )}
+          </button>
+
+          {isListening && (
+            <p style={styles.listeningText}>
+              🔴 Listening... Click button to stop
+            </p>
+          )}
+          {loading && (
+            <p style={styles.loadingText}>
+              ⏳ Processing your order...
+            </p>
+          )}
+
+          <div style={styles.divider}>
+            <span style={styles.dividerText}>or type your order</span>
+          </div>
+
+          <div style={styles.inputRow}>
+            <input
+              style={styles.input}
+              type="text"
+              placeholder="Type: I want a pizza..."
+              value={typedMessage}
+              onChange={(e) => setTypedMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleTypedSubmit()}
+            />
+            <button
+              style={styles.sendButton}
+              onClick={handleTypedSubmit}
+              disabled={loading}
+            >
+              Send
+            </button>
+          </div>
+
+          {transcript && (
+            <div style={styles.transcriptBox}>
+              <strong>You said:</strong> {transcript}
+            </div>
+          )}
+
+          {response && (
+            <div style={styles.responseBox}>
+              <BsChatDotsFill style={styles.chatIcon} />
+              <p style={styles.responseText}>{response}</p>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Text Input */}
-      <div style={styles.inputRow}>
-        <input
-          style={styles.input}
-          type="text"
-          placeholder="Type: I want a pizza..."
-          value={typedMessage}
-          onChange={(e) => setTypedMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleTypedSubmit()}
-        />
-        <button
-          style={styles.sendButton}
-          onClick={handleTypedSubmit}
-          disabled={loading}
-        >
-          Send
-        </button>
-      </div>
-
-      {/* Manual Mode — Show full menu */}
+      {/* Manual Mode Menu */}
       {manualMode && (
         <ManualMenu onResponse={onResponse} />
-      )}
-        <div style={styles.transcriptBox}>
-          <strong>You said:</strong> {transcript}
-        </div>
-      )}
-
-      {/* Response */}
-      {response && (
-        <div style={styles.responseBox}>
-          <BsChatDotsFill style={styles.chatIcon} />
-          <p style={styles.responseText}>{response}</p>
-        </div>
       )}
 
     </div>
@@ -342,6 +346,21 @@ const styles = {
     color: '#333',
     fontSize: '14px',
     lineHeight: '1.5',
+  },
+  modeToggle: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+    justifyContent: 'center',
+  },
+  modeButton: {
+    padding: '8px 20px',
+    borderRadius: '20px',
+    border: '2px solid #FF4500',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    transition: 'all 0.3s ease',
   },
 };
 
