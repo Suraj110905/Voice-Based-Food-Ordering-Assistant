@@ -17,6 +17,7 @@ import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import Wallet from './components/Wallet';
 import toast from 'react-hot-toast';
+import VoicePaymentScreen from './components/VoicePaymentScreen';
 
 function App() {
   const { user, logout, loading } = useAuth();
@@ -27,6 +28,8 @@ function App() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [finalTotal, setFinalTotal] = useState(0);
   const [activeTab, setActiveTab] = useState('order');
+  const [showVoicePayment, setShowVoicePayment] = useState(false);
+  const [awaitingPayment, setAwaitingPayment] = useState(false);
 
   const fetchCart = async () => {
     try {
@@ -54,6 +57,11 @@ function App() {
       setFinalTotal(total);
       setOrderPlaced(true);
       setOptions([]);
+      setShowVoicePayment(false);
+      setAwaitingPayment(false);
+    }
+    if (data.awaiting_payment) {
+      setAwaitingPayment(true);
     }
     fetchCart();
   };
@@ -99,7 +107,17 @@ function App() {
       toast.error('Your cart is empty!');
       return;
     }
-    setActiveTab('voice-payment');
+    setShowVoicePayment(true);
+  };
+
+  const handlePaymentSuccess = (data) => {
+    setFinalTotal(total);
+    setOrderPlaced(true);
+    setShowVoicePayment(false);
+    setAwaitingPayment(false);
+    setCart([]);
+    setTotal(0);
+    setOptions([]);
   };
 
   const handleManualPayment = async () => {
@@ -252,6 +270,16 @@ function App() {
             )}
           </>
         )}
+
+      {/* Voice Payment Screen */}
+      {showVoicePayment && (
+        <VoicePaymentScreen
+          cart={cart}
+          total={total}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => setShowVoicePayment(false)}
+        />
+      )}
 
       </main>
     </div>

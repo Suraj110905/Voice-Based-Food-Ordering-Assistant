@@ -129,44 +129,28 @@ async def process_order(user_input: UserMessage):
         }
 
     # ---- Confirm order ----
+    # Check if user wants to confirm order
     if "confirm" in message or "place order" in message:
         if len(cart) == 0:
             return {"response": "Your cart is empty. Please add items first."}
         total = calculate_total()
-        order = {
-            "items": cart.copy(),
-            "total": total,
-            "status": "placed",
-            "timestamp": datetime.now().isoformat(),
-        }
-        await orders_collection.insert_one(order)
-        await history_collection.insert_one(order)
-        cart.clear()
-        context["awaiting_confirmation"] = False
+        context["awaiting_confirmation"] = True
         return {
-            "response": f"🎉 Order placed! Total paid ₹{total}. Food is on the way!",
-            "order_placed": True
+            "response": f"Your order total is ₹{total + 30} including delivery. Please choose payment method — say 'voice pay' or click Manual Pay button!",
+            "awaiting_payment": True,
+            "cart": cart,
+            "total": total
         }
 
     # ---- Yes/No handling ----
     if message.strip() in ["yes", "yeah", "yep", "sure", "ok", "okay"]:
         if context["awaiting_confirmation"]:
-            if len(cart) == 0:
-                return {"response": "Your cart is empty. Please add items first."}
             total = calculate_total()
-            order = {
-                "items": cart.copy(),
-                "total": total,
-                "status": "placed",
-                "timestamp": datetime.now().isoformat(),
-            }
-            await orders_collection.insert_one(order)
-            await history_collection.insert_one(order)
-            cart.clear()
-            context["awaiting_confirmation"] = False
             return {
-                "response": f"🎉 Order placed! Total paid ₹{total}. Food is on the way!",
-                "order_placed": True
+                "response": f"Great! Your total is ₹{total + 30}. Please choose payment — say 'voice pay' or click Manual Pay!",
+                "awaiting_payment": True,
+                "cart": cart,
+                "total": total
             }
         return {
             "response": "What would you like to order? Try saying 'I want a burger'!"
