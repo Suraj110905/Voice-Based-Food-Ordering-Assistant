@@ -10,10 +10,15 @@ import Favorites from './components/Favorites';
 import Recommendations from './components/Recommendations';
 import SearchBar from './components/SearchBar';
 import Statistics from './components/Statistics';
+import Login from './components/Login';
+import Register from './components/Register';
+import { useAuth } from './components/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
 function App() {
+  const { user, logout, loading } = useAuth();
+  const [authPage, setAuthPage] = useState('login');
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [options, setOptions] = useState([]);
@@ -32,8 +37,8 @@ function App() {
   };
 
   useEffect(() => {
-    fetchCart();
-  }, []);
+    if (user) fetchCart();
+  }, [user]);
 
   const handleResponse = (data) => {
     if (data.cart) {
@@ -60,10 +65,38 @@ function App() {
     setActiveTab('order');
   };
 
+  // --------- LOADING SCREEN ---------
+  if (loading) {
+    return (
+      <div style={styles.loadingScreen}>
+        <p>⏳ Loading VoiceFood...</p>
+      </div>
+    );
+  }
+
+  // --------- AUTH PAGES ---------
+  if (!user) {
+    return (
+      <>
+        <Toaster position="top-right" />
+        {authPage === 'login' ? (
+          <Login
+            onSwitchToRegister={() => setAuthPage('register')}
+          />
+        ) : (
+          <Register
+            onSwitchToLogin={() => setAuthPage('login')}
+          />
+        )}
+      </>
+    );
+  }
+
+  // --------- MAIN APP ---------
   return (
     <div className="App">
       <Toaster position="top-right" />
-      <Header />
+      <Header user={user} onLogout={logout} />
 
       {/* Tab Navigation */}
       <div style={styles.tabBar}>
@@ -90,16 +123,6 @@ function App() {
         <button
           style={{
             ...styles.tab,
-            backgroundColor: activeTab === 'stats' ? '#FF4500' : 'white',
-            color: activeTab === 'stats' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('stats')}
-        >
-          📊 Statistics
-        </button>
-        <button
-          style={{
-            ...styles.tab,
             backgroundColor: activeTab === 'favorites' ? '#FF4500' : 'white',
             color: activeTab === 'favorites' ? 'white' : '#FF4500',
           }}
@@ -115,14 +138,21 @@ function App() {
           }}
           onClick={() => setActiveTab('history')}
         >
-          📜 Order History
+          📜 History
+        </button>
+        <button
+          style={{
+            ...styles.tab,
+            backgroundColor: activeTab === 'stats' ? '#FF4500' : 'white',
+            color: activeTab === 'stats' ? 'white' : '#FF4500',
+          }}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Statistics
         </button>
       </div>
 
       <main style={styles.main}>
-
-        {/* Statistics Tab */}
-        {activeTab === 'stats' && <Statistics />}
 
         {/* Search Tab */}
         {activeTab === 'search' && (
@@ -136,6 +166,9 @@ function App() {
 
         {/* Order History Tab */}
         {activeTab === 'history' && <OrderHistory />}
+
+        {/* Statistics Tab */}
+        {activeTab === 'stats' && <Statistics />}
 
         {/* Order Food Tab */}
         {activeTab === 'order' && (
@@ -175,6 +208,15 @@ function App() {
 }
 
 const styles = {
+  loadingScreen: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    color: '#FF4500',
+    background: 'linear-gradient(135deg, #FFF5F0 0%, #FFF0E8 100%)',
+  },
   tabBar: {
     display: 'flex',
     justifyContent: 'center',
@@ -185,7 +227,7 @@ const styles = {
     flexWrap: 'wrap',
   },
   tab: {
-    padding: '10px 25px',
+    padding: '10px 20px',
     borderRadius: '25px',
     border: '2px solid #FF4500',
     cursor: 'pointer',
@@ -208,6 +250,14 @@ const styles = {
   },
   right: {
     flex: 1,
+  },
+  loadingScreen: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    color: '#FF4500',
   },
 };
 

@@ -1,9 +1,8 @@
 import React from 'react';
 import { GiHotMeal } from 'react-icons/gi';
-import { FaMicrophone } from 'react-icons/fa';
 import { MdDeliveryDining } from 'react-icons/md';
 
-function Header() {
+function Header({ user, onLogout }) {
   return (
     <header style={styles.header}>
       <div style={styles.logoSection}>
@@ -15,15 +14,26 @@ function Header() {
           <p style={styles.subtitle}>AI-Powered Food Ordering</p>
         </div>
       </div>
+
+      {/* Right Section */}
       <div style={styles.rightSection}>
         <div style={styles.deliveryBadge}>
           <MdDeliveryDining style={styles.deliveryIcon} />
           <span style={styles.deliveryText}>Fast Delivery</span>
         </div>
-        <div style={styles.micSection}>
-          <FaMicrophone style={styles.micIcon} />
-          <span style={styles.micText}>Voice Powered</span>
-        </div>
+        {user && (
+          <div style={styles.userSection}>
+            <span style={styles.userName}>
+              👤 {user.full_name}
+            </span>
+            <button
+              style={styles.logoutButton}
+              onClick={onLogout}
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -90,23 +100,25 @@ const styles = {
     fontSize: '13px',
     fontWeight: '500',
   },
-  micSection: {
+  userSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: '6px 12px',
-    borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.3)',
+    gap: '10px',
   },
-  micIcon: {
+  userName: {
     color: 'white',
     fontSize: '14px',
-  },
-  micText: {
-    color: 'white',
-    fontSize: '13px',
     fontWeight: '500',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    border: '1px solid rgba(255,255,255,0.4)',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: 'bold',
   },
 };
 

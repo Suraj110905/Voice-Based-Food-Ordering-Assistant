@@ -3,8 +3,10 @@ import { FaMicrophone, FaStop } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { restaurants } from '../data/menuData';
 
 function VoiceInput({ onResponse }) {
+  const [manualMode, setManualMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
@@ -117,15 +119,41 @@ function VoiceInput({ onResponse }) {
   return (
     <div style={styles.container}>
 
+      {/* Mode Toggle */}
+      <div style={styles.modeToggle}>
+        <button
+          style={{
+            ...styles.modeButton,
+            backgroundColor: !manualMode ? '#FF4500' : 'white',
+            color: !manualMode ? 'white' : '#FF4500',
+          }}
+          onClick={() => setManualMode(false)}
+        >
+          🎤 Voice Mode
+        </button>
+        <button
+          style={{
+            ...styles.modeButton,
+            backgroundColor: manualMode ? '#FF4500' : 'white',
+            color: manualMode ? 'white' : '#FF4500',
+          }}
+          onClick={() => setManualMode(true)}
+        >
+          🖱️ Manual Mode
+        </button>
+      </div>
+
       {/* Title */}
-      <h2 style={styles.title}>🎤 Voice Assistant</h2>
+      <h2 style={styles.title}>
+        {manualMode ? '🖱️ Manual Order' : '🎤 Voice Assistant'}
+      </h2>
       <p style={styles.hint}>
         Press the mic and say something like{' '}
         <strong>"I want a burger"</strong>
       </p>
 
-      {/* Mic Button */}
-      <button
+      {/* Mic Button - only in voice mode */}
+      {!manualMode && <button
         className={isListening ? 'pulse-mic btn-hover' : 'btn-hover'}
         style={{
           ...styles.micButton,
@@ -140,7 +168,7 @@ function VoiceInput({ onResponse }) {
         ) : (
           <FaMicrophone style={styles.micIcon} />
         )}
-      </button>
+      </button>}
 
       {/* Status Text */}
       {isListening && (
@@ -152,10 +180,12 @@ function VoiceInput({ onResponse }) {
         <p style={styles.loadingText}>⏳ Processing your order...</p>
       )}
 
-      {/* Divider */}
-      <div style={styles.divider}>
-        <span style={styles.dividerText}>or type your order</span>
-      </div>
+      {/* Divider - only show in voice mode */}
+      {!manualMode && (
+        <div style={styles.divider}>
+          <span style={styles.dividerText}>or type your order</span>
+        </div>
+      )}
 
       {/* Text Input */}
       <div style={styles.inputRow}>
@@ -176,8 +206,10 @@ function VoiceInput({ onResponse }) {
         </button>
       </div>
 
-      {/* Transcript */}
-      {transcript && (
+      {/* Manual Mode — Show full menu */}
+      {manualMode && (
+        <ManualMenu onResponse={onResponse} />
+      )}
         <div style={styles.transcriptBox}>
           <strong>You said:</strong> {transcript}
         </div>
