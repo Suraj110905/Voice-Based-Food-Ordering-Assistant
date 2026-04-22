@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router
+from auth_routes import auth_router
 from database import client
 
 app = FastAPI(title="Voice Food Ordering Assistant")
@@ -16,6 +17,7 @@ app.add_middleware(
 
 # Register all routes
 app.include_router(router)
+app.include_router(auth_router)
 
 @app.on_event("startup")
 async def startup_db():
