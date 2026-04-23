@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaWallet, FaPlus, FaHistory, FaLock } from 'react-icons/fa';
+import { FaWallet, FaPlus, FaLock } from 'react-icons/fa';
 import { MdPayment } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -11,7 +11,6 @@ function Wallet() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addAmount, setAddAmount] = useState('');
-  const [secretCode, setSecretCode] = useState('');
   const [newSecretCode, setNewSecretCode] = useState('');
   const [activeSection, setActiveSection] = useState('overview');
   const [voicePaymentEnabled, setVoicePaymentEnabled] = useState(true);
@@ -23,7 +22,7 @@ function Wallet() {
     if (user) {
       fetchWallet();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchWallet = async () => {
     try {

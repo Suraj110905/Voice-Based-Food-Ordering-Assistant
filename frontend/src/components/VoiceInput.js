@@ -3,7 +3,6 @@ import { FaMicrophone, FaStop } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { restaurants } from '../data/menuData';
 import ManualMenu from './ManualMenu';
 
 function VoiceInput({ onResponse }) {

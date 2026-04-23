@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import { MdRestaurant } from 'react-icons/md';
 import { FaStar, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';

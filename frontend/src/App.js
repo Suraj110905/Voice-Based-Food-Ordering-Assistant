@@ -12,12 +12,12 @@ import SearchBar from './components/SearchBar';
 import Statistics from './components/Statistics';
 import Login from './components/Login';
 import Register from './components/Register';
+import Wallet from './components/Wallet';
+import VoicePaymentScreen from './components/VoicePaymentScreen';
 import { useAuth } from './components/AuthContext';
 import { Toaster } from 'react-hot-toast';
-import axios from 'axios';
-import Wallet from './components/Wallet';
 import toast from 'react-hot-toast';
-import VoicePaymentScreen from './components/VoicePaymentScreen';
+import axios from 'axios';
 
 function App() {
   const { user, logout, loading } = useAuth();
@@ -46,25 +46,18 @@ function App() {
   }, [user]);
 
   const handleResponse = (data) => {
-    // Update cart if returned
     if (data.cart) {
       setCart(data.cart);
       setTotal(data.total || 0);
     }
-
-    // Update options if returned
     if (data.options) {
       setOptions(data.options);
     }
-
-    // If awaiting payment show payment buttons
     if (data.awaiting_payment) {
       setAwaitingPayment(true);
       fetchCart();
       return;
     }
-
-    // If order placed directly
     if (data.order_placed) {
       setFinalTotal(total);
       setOrderPlaced(true);
@@ -73,7 +66,6 @@ function App() {
       setAwaitingPayment(false);
       return;
     }
-
     fetchCart();
   };
 
@@ -83,35 +75,10 @@ function App() {
     setCart([]);
     setTotal(0);
     setFinalTotal(0);
+    setAwaitingPayment(false);
+    setShowVoicePayment(false);
     setActiveTab('order');
   };
-
-  // --------- LOADING SCREEN ---------
-  if (loading) {
-    return (
-      <div style={styles.loadingScreen}>
-        <p>⏳ Loading VoiceFood...</p>
-      </div>
-    );
-  }
-
-  // --------- AUTH PAGES ---------
-  if (!user) {
-    return (
-      <>
-        <Toaster position="top-right" />
-        {authPage === 'login' ? (
-          <Login
-            onSwitchToRegister={() => setAuthPage('register')}
-          />
-        ) : (
-          <Register
-            onSwitchToLogin={() => setAuthPage('login')}
-          />
-        )}
-      </>
-    );
-  }
 
   const handleVoicePayment = () => {
     if (cart.length === 0) {
@@ -119,16 +86,6 @@ function App() {
       return;
     }
     setShowVoicePayment(true);
-  };
-
-  const handlePaymentSuccess = (data) => {
-    setFinalTotal(total);
-    setOrderPlaced(true);
-    setShowVoicePayment(false);
-    setAwaitingPayment(false);
-    setCart([]);
-    setTotal(0);
-    setOptions([]);
   };
 
   const handleManualPayment = async () => {
@@ -149,6 +106,7 @@ function App() {
       setOrderPlaced(true);
       setCart([]);
       setTotal(0);
+      setAwaitingPayment(false);
       toast.success(res.data.message);
     } catch (error) {
       toast.error(
@@ -157,7 +115,44 @@ function App() {
     }
   };
 
-  // --------- MAIN APP ---------
+  const handlePaymentSuccess = () => {
+    setFinalTotal(total);
+    setOrderPlaced(true);
+    setShowVoicePayment(false);
+    setAwaitingPayment(false);
+    setCart([]);
+    setTotal(0);
+    setOptions([]);
+  };
+
+  // Loading screen
+  if (loading) {
+    return (
+      <div style={styles.loadingScreen}>
+        <p>⏳ Loading VoiceFood...</p>
+      </div>
+    );
+  }
+
+  // Auth pages
+  if (!user) {
+    return (
+      <>
+        <Toaster position="top-right" />
+        {authPage === 'login' ? (
+          <Login
+            onSwitchToRegister={() => setAuthPage('register')}
+          />
+        ) : (
+          <Register
+            onSwitchToLogin={() => setAuthPage('login')}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Main app
   return (
     <div className="App">
       <Toaster position="top-right" />
@@ -165,90 +160,41 @@ function App() {
 
       {/* Tab Navigation */}
       <div style={styles.tabBar}>
-        <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'order' ? '#FF4500' : 'white',
-            color: activeTab === 'order' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('order')}
-        >
-          🎤 Order Food
-        </button>
-        <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'search' ? '#FF4500' : 'white',
-            color: activeTab === 'search' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('search')}
-        >
-          🔍 Search
-        </button>
-        <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'favorites' ? '#FF4500' : 'white',
-            color: activeTab === 'favorites' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('favorites')}
-        >
-          ❤️ Favorites
-        </button>
-        <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'history' ? '#FF4500' : 'white',
-            color: activeTab === 'history' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('history')}
-        >
-          📜 History
-        </button>
-        <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'stats' ? '#FF4500' : 'white',
-            color: activeTab === 'stats' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('stats')}
-        >
-          📊 Statistics
-        </button>
+        {[
+          { key: 'order', label: '🎤 Order Food' },
+          { key: 'search', label: '🔍 Search' },
+          { key: 'favorites', label: '❤️ Favorites' },
+          { key: 'history', label: '📜 History' },
+          { key: 'stats', label: '📊 Statistics' },
+          { key: 'wallet', label: '💳 Wallet' },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            style={{
+              ...styles.tab,
+              backgroundColor:
+                activeTab === tab.key ? '#FF4500' : 'white',
+              color:
+                activeTab === tab.key ? 'white' : '#FF4500',
+            }}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
-      <button
-          style={{
-            ...styles.tab,
-            backgroundColor: activeTab === 'wallet' ? '#FF4500' : 'white',
-            color: activeTab === 'wallet' ? 'white' : '#FF4500',
-          }}
-          onClick={() => setActiveTab('wallet')}
-        >
-          💳 Wallet
-        </button>
 
       <main style={styles.main}>
-
-        {/* Wallet Tab */}
-        {activeTab === 'wallet' && <Wallet />}
-
-        {/* Search Tab */}
         {activeTab === 'search' && (
           <SearchBar onCartUpdate={fetchCart} />
         )}
-
-        {/* Favorites Tab */}
         {activeTab === 'favorites' && (
           <Favorites onCartUpdate={fetchCart} />
         )}
-
-        {/* Order History Tab */}
         {activeTab === 'history' && <OrderHistory />}
-
-        {/* Statistics Tab */}
         {activeTab === 'stats' && <Statistics />}
+        {activeTab === 'wallet' && <Wallet />}
 
-        {/* Order Food Tab */}
         {activeTab === 'order' && (
           <>
             {orderPlaced ? (
@@ -282,6 +228,7 @@ function App() {
             )}
           </>
         )}
+      </main>
 
       {/* Voice Payment Screen */}
       {showVoicePayment && (
@@ -292,8 +239,6 @@ function App() {
           onCancel={() => setShowVoicePayment(false)}
         />
       )}
-
-      </main>
     </div>
   );
 }
@@ -311,18 +256,18 @@ const styles = {
   tabBar: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '10px',
+    gap: '8px',
     padding: '15px',
     backgroundColor: 'white',
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     flexWrap: 'wrap',
   },
   tab: {
-    padding: '10px 20px',
+    padding: '8px 16px',
     borderRadius: '25px',
     border: '2px solid #FF4500',
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: 'bold',
     transition: 'all 0.3s ease',
   },
@@ -341,14 +286,6 @@ const styles = {
   },
   right: {
     flex: 1,
-  },
-  loadingScreen: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    color: '#FF4500',
   },
 };
 
