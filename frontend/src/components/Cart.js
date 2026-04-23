@@ -4,7 +4,7 @@ import { MdRestaurant } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-function Cart({ cart, total, onCartUpdate, onVoicePayment, onManualPayment }) {
+function Cart({ cart, total, onCartUpdate, onVoicePayment, onManualPayment, awaitingPayment }) {
   const [comboSuggestion, setComboSuggestion] = useState('');
 
   useEffect(() => {
@@ -128,27 +128,35 @@ function Cart({ cart, total, onCartUpdate, onVoicePayment, onManualPayment }) {
         </div>
       )}
 
-      {/* Payment Buttons */}
-      <div style={styles.paymentSection}>
-        <p style={styles.paymentTitle}>💳 Pay with Wallet</p>
-        <div style={styles.paymentButtons}>
-          <button
-            style={styles.voicePayButton}
-            onClick={onVoicePayment}
-          >
-            🎤 Voice Pay
-          </button>
-          <button
-            style={styles.manualPayButton}
-            onClick={onManualPayment}
-          >
-            🖱️ Manual Pay
-          </button>
-        </div>
+      {/* Confirm Hint - shown when cart has items */}
+      {!awaitingPayment && (
         <p style={styles.confirmHint}>
-          🎤 Or say <strong>"confirm order"</strong>
+          🎤 Say <strong>"confirm order"</strong> to proceed to payment!
         </p>
-      </div>
+      )}
+
+      {/* Payment Buttons - shown only after confirm */}
+      {awaitingPayment && (
+        <div style={styles.paymentSection}>
+          <p style={styles.paymentTitle}>
+            💳 Choose Payment Method
+          </p>
+          <div style={styles.paymentButtons}>
+            <button
+              style={styles.voicePayButton}
+              onClick={onVoicePayment}
+            >
+              🎤 Voice Pay
+            </button>
+            <button
+              style={styles.manualPayButton}
+              onClick={onManualPayment}
+            >
+              🖱️ Manual Pay
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

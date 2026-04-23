@@ -46,23 +46,34 @@ function App() {
   }, [user]);
 
   const handleResponse = (data) => {
+    // Update cart if returned
     if (data.cart) {
       setCart(data.cart);
       setTotal(data.total || 0);
     }
+
+    // Update options if returned
     if (data.options) {
       setOptions(data.options);
     }
+
+    // If awaiting payment show payment buttons
+    if (data.awaiting_payment) {
+      setAwaitingPayment(true);
+      fetchCart();
+      return;
+    }
+
+    // If order placed directly
     if (data.order_placed) {
       setFinalTotal(total);
       setOrderPlaced(true);
       setOptions([]);
       setShowVoicePayment(false);
       setAwaitingPayment(false);
+      return;
     }
-    if (data.awaiting_payment) {
-      setAwaitingPayment(true);
-    }
+
     fetchCart();
   };
 
@@ -264,6 +275,7 @@ function App() {
                     onCartUpdate={fetchCart}
                     onVoicePayment={handleVoicePayment}
                     onManualPayment={handleManualPayment}
+                    awaitingPayment={awaitingPayment}
                   />
                 </div>
               </div>

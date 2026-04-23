@@ -88,6 +88,11 @@ function VoiceInput({ onResponse }) {
         onResponse(data);
       }
 
+      // If awaiting payment stop here
+      if (data.awaiting_payment) {
+        return;
+      }
+
       toast.success('Got a response!');
     } catch (error) {
       toast.error('Backend not connected. Make sure FastAPI is running!');
