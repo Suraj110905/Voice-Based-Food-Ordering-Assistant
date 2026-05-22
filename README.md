@@ -270,7 +270,7 @@ Request:
 
 Response:
 {
-  "response": "Great choice! I found McAloo Tikki from McDonald's for ₹50 and Zinger Burger from KFC for ₹120. Which one would you like?",
+  "response": "Great choice ! I found McAloo Tikki from McDonald's for ₹50 and Zinger Burger from KFC for ₹120. Which one would you like?",
   "cart": [...],
   "options": [...],
   "total": 50
