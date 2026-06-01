@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from data import restaurants, food_keywords
-from database import orders_collection, favorites_collection, history_collection
+from database import orders_collection, favorites_collection, history_collection, db
 from datetime import datetime
 from ai_service import get_ai_response, get_recommendations, get_combo_suggestion
+
 
 router = APIRouter()
 
