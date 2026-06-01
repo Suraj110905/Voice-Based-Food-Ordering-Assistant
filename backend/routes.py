@@ -563,3 +563,103 @@ async def get_statistics():
         "top_restaurant": top_restaurant,
         "most_ordered": most_ordered
     }
+    # --------- ADMIN ENDPOINTS ---------
+
+ADMIN_USERNAME = "admin"  # Change this to your admin username
+
+@router.get("/admin/stats")
+async def admin_stats(username: str):
+    """Get admin dashboard statistics"""
+    if username != ADMIN_USERNAME:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied! Admins only."
+        )
+
+    # Total orders
+    total_orders = await orders_collection.count_documents({})
+
+    # Total revenue
+    revenue = 0
+    async for order in orders_collection.find({}, {"grand_total": 1, "total": 1}):
+        revenue += order.get("grand_total", order.get("total", 0) + 30)
+
+    # Total users
+    total_users = await db.users.count_documents({})
+
+    # Today's orders
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_orders = await orders_collection.count_documents(
+        {"timestamp": {"$regex": f"^{today}"}}
+    )
+
+    # Most ordered items
+    item_counts = {}
+    async for order in orders_collection.find({}, {"items": 1}):
+        for item in order.get("items", []):
+            name = item["item"]
+            item_counts[name] = item_counts.get(name, 0) + item.get("quantity", 1)
+
+    top_items = sorted(
+        [{"name": k, "count": v} for k, v in item_counts.items()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:5]
+
+    # Recent orders
+    recent_orders = []
+    async for order in orders_collection.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1).limit(5):
+        recent_orders.append(order)
+
+    return {
+        "total_orders": total_orders,
+        "total_revenue": revenue,
+        "total_users": total_users,
+        "today_orders": today_orders,
+        "top_items": top_items,
+        "recent_orders": recent_orders,
+    }
+
+@router.get("/admin/orders")
+async def admin_get_all_orders(username: str):
+    """Get all orders for admin"""
+    if username != ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="Access denied!")
+
+    orders = []
+    async for order in orders_collection.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1):
+        orders.append(order)
+    return {"orders": orders}
+
+@router.get("/admin/users")
+async def admin_get_all_users(username: str):
+    """Get all users for admin"""
+    if username != ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="Access denied!")
+
+    users = []
+    async for user in db.users.find(
+        {}, {"_id": 0, "password": 0}
+    ):
+        users.append(user)
+    return {"users": users}
+
+@router.put("/admin/order/{order_id}/status")
+async def admin_update_order_status(
+    order_id: str,
+    username: str,
+    new_status: str
+):
+    """Update order status"""
+    if username != ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="Access denied!")
+
+    await orders_collection.update_one(
+        {"_id": __import__('bson').ObjectId(order_id)},
+        {"$set": {"status": new_status}}
+    )
+    return {"message": f"Order status updated to {new_status}"}
